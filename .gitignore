@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+### No accidental properties files ###
+/src/main/resources/application.properties
