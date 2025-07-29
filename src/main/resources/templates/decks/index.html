@@ -1,0 +1,25 @@
+<h1>Decks</h1>
+
+<ul>
+	<li><a href="/decks/new">New Deck</a></li>
+</ul>
+
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="deck : ${decks}">
+            <td><a th:href="@{/decks/{id}(id=${deck.id})}"><span th:text="${deck.title}"></span></a></td>
+            <td>
+                <a th:href="@{/decks/{id}/edit(id=${deck.id})}">Edit</a><br/>
+                <form th:action="@{/decks/{id}(id=${deck.id})}" th:method="delete">
+                    <input type="submit" value="Delete"/>
+                </form>
+            </td>
+    </tbody>
+</table>
+

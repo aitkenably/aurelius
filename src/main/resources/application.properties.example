@@ -1,1 +1,10 @@
 spring.application.name=Aurelius
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=aurelius
+spring.datasource.username=aurelius_app
+spring.datasource.password=mysecretpassword
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.flyway.default-schema=aurelius
+
+spring.mvc.hiddenmethod.filter.enabled=true

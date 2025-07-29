@@ -1,0 +1,9 @@
+
+<h1>Edit Deck</h1>
+
+<form th:action="@{/decks/{id}(id=${deck.id})}" th:method="put">
+    <input type="text" th:field="*{deck.id}"/>
+    <input type="text" th:field="*{deck.title}"/>
+    <input type="submit" value="Update Deck"/>
+</form>
+
