@@ -2,6 +2,8 @@ package aitkenably.aurelius.domain;
 
 import jakarta.persistence.*;
 
+// TODO: Add null and unique constraints on title (update DB)
+
 @Entity
 public class Deck {
     @Id
