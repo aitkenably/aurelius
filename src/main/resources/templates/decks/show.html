@@ -2,6 +2,31 @@
 <h1>Deck</h1>
 
 <span th:text="${deck.id}"></span><br/>
-<span th:text="${deck.title}"></span><br/>
+Title: <span th:text="${deck.title}"></span><br/>
 
 <a href="/decks">Back</a>
+
+<h2>Cards</h2>
+<ul>
+    <li><a th:href="@{/decks/{id}/cards/new(id=${deck.id})}">New Card</a></li>
+</ul>
+<table>
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Question</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="card : ${cards}">
+            <td><span th:text="${card.id}"></span></td>
+            <td><span th:text="${card.question}"></span></td>
+            <td>
+                <a th:href="@{/decks/{id}/cards/{cardId}/edit(id=${deck.id}, cardId=${card.id})}">Edit</a><br/>
+                <form th:action="@{/decks/{id}/cards/{cardId}(id=${deck.id}, cardId=${card.id})}" th:method="delete">
+                    <input type="submit" value="Delete"/>
+                </form>
+            </td>
+    </tbody>
+</table>

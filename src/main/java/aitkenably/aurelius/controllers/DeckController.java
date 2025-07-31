@@ -1,6 +1,9 @@
 package aitkenably.aurelius.controllers;
 
 import aitkenably.aurelius.NewDeckDTO;
+import aitkenably.aurelius.UpdateCardDTO;
+import aitkenably.aurelius.domain.Card;
+import aitkenably.aurelius.domain.CardRepository;
 import aitkenably.aurelius.domain.Deck;
 import aitkenably.aurelius.domain.DeckRepository;
 import org.springframework.data.domain.Sort;
@@ -9,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
 
 /**
  * Controller for the Decks.
@@ -28,9 +33,11 @@ public class DeckController {
     // TODO: Unit tests for all endpoints
 
     private final DeckRepository deckRepo;
+    private final CardRepository cardRepo;
 
-    DeckController(DeckRepository deckRepo) {
+    DeckController(DeckRepository deckRepo, CardRepository cardRepo) {
         this.deckRepo = deckRepo;
+        this.cardRepo = cardRepo;
     }
 
     /**
@@ -56,8 +63,12 @@ public class DeckController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
+        var deck = optionalDeck.get();
+        List<Card> cardList = cardRepo.findByDeck(deck);
+
         ModelAndView mav = new ModelAndView("decks/show");
-        mav.addObject("deck", optionalDeck.get());
+        mav.addObject("deck", deck);
+        mav.addObject("cards", cardList);
         return mav;
     }
 
@@ -121,6 +132,61 @@ public class DeckController {
         // TODO: Validate the data & id match
         deckRepo.save(deck);
         return "redirect:/decks/" + deck.getId();
+    }
+
+    @GetMapping("/{id}/cards/new")
+    public ModelAndView newCardForm(@PathVariable("id") Long did) {
+        ModelAndView mav = new ModelAndView("decks/cards/new");
+        mav.addObject("deckId", did);
+        return mav;
+    }
+
+    @GetMapping("/{id}/cards/{cid}/edit")
+    public ModelAndView editCardForm(@PathVariable("id") Long did, @PathVariable("cid") Long cid) {
+        Card card = cardRepo.findById(cid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        UpdateCardDTO dto = new UpdateCardDTO();
+        dto.setQuestion(card.getQuestion());
+        dto.setAnswer(card.getAnswer());
+
+        ModelAndView mav = new ModelAndView("decks/cards/edit");
+        mav.addObject("deckId", did);
+        mav.addObject("cardId", cid);
+        mav.addObject("cardDto", dto);
+        return mav;
+
+    }
+
+    @PostMapping("/{id}/cards")
+    public String createCard(@PathVariable("id") Long did, Card card) {
+        card.setId(null);
+        Deck deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        card.setDeck(deck);
+
+        cardRepo.save(card);
+        return "redirect:/decks/" + did;
+    }
+
+    @DeleteMapping("/{id}/cards/{cid}")
+    public String deleteCard(@PathVariable("id") Long did, @PathVariable("cid") Long cid) {
+        cardRepo.deleteById(cid);
+        return "redirect:/decks/" + did;
+    }
+
+    @PutMapping("/{id}/cards/{cid}")
+    public String updateCard(@PathVariable("id") Long did, @PathVariable("cid") Long cid, UpdateCardDTO dto) {
+        Card card = cardRepo.findById(cid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if(!card.getDeck().getId().equals(did)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+
+        card.setQuestion(dto.getQuestion());
+        card.setAnswer(dto.getAnswer());
+
+        cardRepo.save(card);
+
+        return "redirect:/decks/" + did;
     }
 
 }

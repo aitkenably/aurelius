@@ -1,0 +1,13 @@
+<h1>Edit Card</h1>
+
+<form th:action="@{/decks/{did}/cards/{cid}(did=${deckId}, cid=${cardId})}" th:method="put">
+    <label for="question">Question</label>
+    <textarea rows="10" th:field="*{cardDto.question}"></textarea><br/>
+
+    <label for="answer">Answer</label>
+    <textarea rows="10" th:field="*{cardDto.answer}"></textarea><br/>
+
+    <input type="submit" value="Update Card"/>
+</form>
+
+
