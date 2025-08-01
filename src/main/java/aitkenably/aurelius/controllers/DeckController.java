@@ -15,6 +15,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
+// TODO: Add card endpoints
+// TODO: Is there a better way to list endpoints in the documentation?
+
 /**
  * Controller for the Decks.
  * Supported endpoints:
@@ -58,6 +61,7 @@ public class DeckController {
      */
     @GetMapping("/{id}")
     public ModelAndView showDeckScreen(@PathVariable("id") Long did) {
+        // TODO: Use orElseThrow
         var optionalDeck = deckRepo.findById(did);
         if(optionalDeck.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -89,6 +93,7 @@ public class DeckController {
      */
     @GetMapping("/{id}/edit")
     public ModelAndView editDeckForm(@PathVariable("id") Long did) {
+        // TODO: Use orElse
         var optionalDeck = deckRepo.findById(did);
         if(optionalDeck.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -130,10 +135,13 @@ public class DeckController {
     @PutMapping("/{id}")
     public String updateDeck(Deck deck) {
         // TODO: Validate the data & id match
+        // TODO: Pass UpdateDeckDTO (NewDeckDTO to use content)
         deckRepo.save(deck);
         return "redirect:/decks/" + deck.getId();
     }
 
+    // TODO: Comment
+    // TODO: Rename {id} to did
     @GetMapping("/{id}/cards/new")
     public ModelAndView newCardForm(@PathVariable("id") Long did) {
         ModelAndView mav = new ModelAndView("decks/cards/new");
@@ -141,10 +149,13 @@ public class DeckController {
         return mav;
     }
 
+    // TODO: Comment
+    // TODO: Rename {id} to did
     @GetMapping("/{id}/cards/{cid}/edit")
     public ModelAndView editCardForm(@PathVariable("id") Long did, @PathVariable("cid") Long cid) {
         Card card = cardRepo.findById(cid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        // TODO: Create better way of creating DTOs
         UpdateCardDTO dto = new UpdateCardDTO();
         dto.setQuestion(card.getQuestion());
         dto.setAnswer(card.getAnswer());
@@ -157,6 +168,9 @@ public class DeckController {
 
     }
 
+    // TODO: Comment
+    // TODO: Rename {id} to did
+    // TODO: Accept a CardDTO instead of Card
     @PostMapping("/{id}/cards")
     public String createCard(@PathVariable("id") Long did, Card card) {
         card.setId(null);
@@ -167,16 +181,19 @@ public class DeckController {
         return "redirect:/decks/" + did;
     }
 
+    // TODO: Comment
     @DeleteMapping("/{id}/cards/{cid}")
     public String deleteCard(@PathVariable("id") Long did, @PathVariable("cid") Long cid) {
         cardRepo.deleteById(cid);
         return "redirect:/decks/" + did;
     }
 
+    // TODO: Comment
     @PutMapping("/{id}/cards/{cid}")
     public String updateCard(@PathVariable("id") Long did, @PathVariable("cid") Long cid, UpdateCardDTO dto) {
         Card card = cardRepo.findById(cid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        // TODO: Is there a better way to do this? (referencing Decks)
         if(!card.getDeck().getId().equals(did)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
