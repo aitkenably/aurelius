@@ -1,10 +1,16 @@
 spring.application.name=Aurelius
 
+# Database Configuration
 spring.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=aurelius
 spring.datasource.username=aurelius_app
 spring.datasource.password=mysecretpassword
 spring.datasource.driver-class-name=org.postgresql.Driver
 
+# Flyway configuration
 spring.flyway.default-schema=aurelius
 
+# Ensure Thymeleaf automatically handles DELETEs and PUTs through post
 spring.mvc.hiddenmethod.filter.enabled=true
+
+# Error handler
+server.error.path=/error
