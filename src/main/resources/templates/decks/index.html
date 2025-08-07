@@ -1,5 +1,10 @@
 <h1>Decks</h1>
 
+<form th:action="@{/logout}" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+    <button type="submit">Logout</button>
+</form>
+
 <ul>
 	<li><a href="/decks/new">New Deck</a></li>
 </ul>
