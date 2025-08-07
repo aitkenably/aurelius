@@ -68,6 +68,20 @@ cd aurelius
 
 # App will be available at http://localhost:8080
 ```
+Once the schema is built, you'll need to add some user accounts to log in. Passwords are stored with the 
+bcrypt algorithm. You can manually encrypt passwords with the Spring CLI or use one of the online bcrypt 
+hash generators. 
+
+The inserts below are for an account with the username 'root' and password 'password'. If you create an 
+account, you'll also need an entry into the authorities table or the login will fail. 
+
+```sql
+INSERT INTO aurelius.users (username, password, enabled) 
+VALUES ('root', '{bcrypt}$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW', true);
+
+INSERT INTO aurelius.authorities (username, authority) 
+VALUES ('root', 'USER');
+```
 
 ---
 
