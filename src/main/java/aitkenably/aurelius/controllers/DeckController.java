@@ -7,6 +7,7 @@ import aitkenably.aurelius.domain.CardRepository;
 import aitkenably.aurelius.domain.Deck;
 import aitkenably.aurelius.domain.DeckRepository;
 import jakarta.validation.Valid;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.parameters.P;
@@ -97,7 +98,15 @@ public class DeckController {
             redirectAttributes.addFlashAttribute("newDeckDto", newDeckDto);
             return "redirect:decks/new";
         } else {
-            deckRepo.save(newDeckDto.toDeck());
+            // TODO: Fix duplicate code
+            try {
+                deckRepo.save(newDeckDto.toDeck());
+            } catch (DataIntegrityViolationException ex) {
+                bindingResult.rejectValue("title", "error.deck", "A deck with that title already exists");
+                redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.newDeckDto", bindingResult);
+                redirectAttributes.addFlashAttribute("newDeckDto", newDeckDto);
+                return "redirect:decks/new";
+            }
             return "redirect:/decks";
         }
     }

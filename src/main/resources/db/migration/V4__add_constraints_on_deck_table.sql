@@ -1,0 +1,4 @@
+ALTER TABLE deck
+ALTER COLUMN title SET NOT NULL;
+
+ALTER TABLE deck ADD UNIQUE (title);
