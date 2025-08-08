@@ -6,12 +6,17 @@ import aitkenably.aurelius.domain.Card;
 import aitkenably.aurelius.domain.CardRepository;
 import aitkenably.aurelius.domain.Deck;
 import aitkenably.aurelius.domain.DeckRepository;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -59,20 +64,11 @@ public class DeckController {
      * @param did the id of the deck
      * @return the view and the deck
      */
-    @GetMapping("/{id}")
-    public ModelAndView showDeckScreen(@PathVariable("id") Long did) {
-        // TODO: Use orElseThrow
-        var optionalDeck = deckRepo.findById(did);
-        if(optionalDeck.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-
-        var deck = optionalDeck.get();
-        List<Card> cardList = cardRepo.findByDeck(deck);
-
+    @GetMapping("/{did}")
+    public ModelAndView showDeckScreen(@PathVariable("did") Long did) {
+        var deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         ModelAndView mav = new ModelAndView("decks/show");
         mav.addObject("deck", deck);
-        mav.addObject("cards", cardList);
         return mav;
     }
 
@@ -81,27 +77,12 @@ public class DeckController {
      * @return the view name
      */
     @GetMapping("new")
-    public String newDeckForm() {
-        return "decks/new";
-    }
-
-    /**
-     * Display a form to edit an existing deck.
-     * Returns 404 if the deck does not exist.
-     * @param did the id of the deck
-     * @return the view and the deck
-     */
-    @GetMapping("/{id}/edit")
-    public ModelAndView editDeckForm(@PathVariable("id") Long did) {
-        // TODO: Use orElse
-        var optionalDeck = deckRepo.findById(did);
-        if(optionalDeck.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    public String newDeckForm(Model model) {
+        if(!model.containsAttribute("newDeckDto")) {
+            model.addAttribute("newDeckDto", new NewDeckDTO());
         }
 
-        ModelAndView mav = new ModelAndView("decks/edit");
-        mav.addObject("deck", optionalDeck.get());
-        return mav;
+        return "decks/new";
     }
 
     /**
@@ -110,19 +91,42 @@ public class DeckController {
      * @return Redirect to the list of decks
      */
     @PostMapping
-    public String createDeck(NewDeckDTO dto) {
-        // TODO: Validate the data
-        deckRepo.save(NewDeckDTO.toDeck(dto));
-        return "redirect:/decks";
+    public String createDeck(@Valid @ModelAttribute NewDeckDTO newDeckDto, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        if(bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.newDeckDto", bindingResult);
+            redirectAttributes.addFlashAttribute("newDeckDto", newDeckDto);
+            return "redirect:decks/new";
+        } else {
+            deckRepo.save(newDeckDto.toDeck());
+            return "redirect:/decks";
+        }
     }
+
+
+    /**
+     * Display a form to edit an existing deck.
+     * Returns 404 if the deck does not exist.
+     * @param did the id of the deck
+     * @return the view and the deck
+     */
+    @GetMapping("/{did}/edit")
+    public ModelAndView editDeckForm(@PathVariable("did") Long did) {
+        var deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        ModelAndView mav = new ModelAndView("decks/edit");
+        mav.addObject("deck", deck);
+        return mav;
+    }
+
+
 
     /**
      * Delete a deck.
      * @param did Deck id to delete
      * @return Redirect to the list of decks
      */
-    @DeleteMapping("/{id}")
-    public String deleteDeck(@PathVariable("id") Long did) {
+    @DeleteMapping("/{did}")
+    public String deleteDeck(@PathVariable("did") Long did) {
+        // TODO: Handle card deletion
         deckRepo.deleteById(did);
         return "redirect:/decks";
     }
@@ -132,7 +136,7 @@ public class DeckController {
      * @param deck Deck to update
      * @return Redirect to the deck
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{did}")
     public String updateDeck(Deck deck) {
         // TODO: Validate the data & id match
         // TODO: Pass UpdateDeckDTO (NewDeckDTO to use content)
@@ -141,18 +145,16 @@ public class DeckController {
     }
 
     // TODO: Comment
-    // TODO: Rename {id} to did
-    @GetMapping("/{id}/cards/new")
-    public ModelAndView newCardForm(@PathVariable("id") Long did) {
+    @GetMapping("/{did}/cards/new")
+    public ModelAndView newCardForm(@PathVariable("did") Long did) {
         ModelAndView mav = new ModelAndView("decks/cards/new");
         mav.addObject("deckId", did);
         return mav;
     }
 
     // TODO: Comment
-    // TODO: Rename {id} to did
-    @GetMapping("/{id}/cards/{cid}/edit")
-    public ModelAndView editCardForm(@PathVariable("id") Long did, @PathVariable("cid") Long cid) {
+    @GetMapping("/{did}/cards/{cid}/edit")
+    public ModelAndView editCardForm(@PathVariable("did") Long did, @PathVariable("cid") Long cid) {
         Card card = cardRepo.findById(cid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         // TODO: Create better way of creating DTOs
@@ -169,10 +171,9 @@ public class DeckController {
     }
 
     // TODO: Comment
-    // TODO: Rename {id} to did
     // TODO: Accept a CardDTO instead of Card
-    @PostMapping("/{id}/cards")
-    public String createCard(@PathVariable("id") Long did, Card card) {
+    @PostMapping("/{did}/cards")
+    public String createCard(@PathVariable("did") Long did, Card card) {
         card.setId(null);
         Deck deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         card.setDeck(deck);
@@ -182,18 +183,17 @@ public class DeckController {
     }
 
     // TODO: Comment
-    @DeleteMapping("/{id}/cards/{cid}")
-    public String deleteCard(@PathVariable("id") Long did, @PathVariable("cid") Long cid) {
+    @DeleteMapping("/{did}/cards/{cid}")
+    public String deleteCard(@PathVariable("did") Long did, @PathVariable("cid") Long cid) {
         cardRepo.deleteById(cid);
         return "redirect:/decks/" + did;
     }
 
     // TODO: Comment
-    @PutMapping("/{id}/cards/{cid}")
-    public String updateCard(@PathVariable("id") Long did, @PathVariable("cid") Long cid, UpdateCardDTO dto) {
+    @PutMapping("/{did}/cards/{cid}")
+    public String updateCard(@PathVariable("did") Long did, @PathVariable("cid") Long cid, UpdateCardDTO dto) {
         Card card = cardRepo.findById(cid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // TODO: Is there a better way to do this? (referencing Decks)
         if(!card.getDeck().getId().equals(did)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }

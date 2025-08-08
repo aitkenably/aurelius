@@ -19,7 +19,7 @@ Title: <span th:text="${deck.title}"></span><br/>
         </tr>
     </thead>
     <tbody>
-        <tr th:each="card : ${cards}">
+        <tr th:each="card : ${deck.cards}">
             <td><span th:text="${card.id}"></span></td>
             <td><span th:text="${card.question}"></span></td>
             <td>
