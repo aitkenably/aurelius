@@ -10,6 +10,8 @@ public class UpdateDeckDTO {
     @NotBlank(message = "Title is required")
     private String title;
 
+   public UpdateDeckDTO() {}
+
    public UpdateDeckDTO(Deck d) {
         this.id = d.getId();
         this.title = d.getTitle();

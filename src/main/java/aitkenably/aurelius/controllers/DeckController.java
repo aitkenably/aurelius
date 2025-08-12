@@ -86,25 +86,20 @@ public class DeckController {
 
     /**
      * Create a new deck.
-     * @param dto DTO containing the title of the deck
+     * @param newDeckDto DTO containing the title of the deck
+     * @param bindingResult Validation results
+     * @param redirectAttributes Redirect attributes
      * @return Redirect to the list of decks
      */
     @PostMapping
     public String createDeck(@Valid @ModelAttribute NewDeckDTO newDeckDto, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
         if(bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.newDeckDto", bindingResult);
-            redirectAttributes.addFlashAttribute("newDeckDto", newDeckDto);
-            return "redirect:decks/new";
+            return handleValidationErrors(newDeckDto, "newDeckDto", bindingResult, redirectAttributes, "redirect:decks/new");
         } else {
-            // TODO: Fix duplicate code
             try {
                 deckRepo.save(newDeckDto.toDeck());
             } catch (DataIntegrityViolationException ex) {
-                // Unique constraint violation on title is the only reason this would happen
-                bindingResult.rejectValue("title", "error.deck", "A deck with that title already exists");
-                redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.newDeckDto", bindingResult);
-                redirectAttributes.addFlashAttribute("newDeckDto", newDeckDto);
-                return "redirect:decks/new";
+                return handleDuplicateTitleError(newDeckDto, "newDeckDto", bindingResult, redirectAttributes, "redirect:decks/new");
             }
             return "redirect:/decks";
         }
@@ -126,30 +121,33 @@ public class DeckController {
 
     /**
      * Update a deck.
-     * @param deck Deck to update
+     * @param did ID of the deck to update
+     * @param updateDeckDto DTO containing the updated deck information
+     * @param bindingResult Validation results
+     * @param redirectAttributes Redirect attributes
      * @return Redirect to the deck
      */
     @PutMapping("/{did}")
     public String updateDeck(@PathVariable("did") Long did, @Valid @ModelAttribute UpdateDeckDTO updateDeckDto,
                              BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+
+        System.out.println("Updating deck " + did);
         if(!updateDeckDto.getId().equals(did)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
+        String redirectPath = "redirect:/decks/" + did + "/edit";
+
         if(bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("updateDeckDto", updateDeckDto);
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.updateDeckDto", bindingResult);;
-            return "redirect:decks/" + did + "/edit";
+            return handleValidationErrors(updateDeckDto, "updateDeckDto", bindingResult, redirectAttributes, redirectPath);
         } else {
+            System.out.println("Updating deck " + did);
             Deck deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
             updateDeckDto.updateDeck(deck);
             try {
                 deckRepo.save(deck);
             } catch(DataIntegrityViolationException ex) {
-                bindingResult.rejectValue("title", "error.deck", "A deck with that title already exists");
-                redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.updateDeckDto", bindingResult);
-                redirectAttributes.addFlashAttribute("updateDeckDto", updateDeckDto);
-                return "redirect:decks/" + did + "/edit";
+                return handleDuplicateTitleError(updateDeckDto, "updateDeckDto", bindingResult, redirectAttributes, redirectPath);
             }
         }
 
@@ -232,4 +230,35 @@ public class DeckController {
         return "redirect:/decks/" + did;
     }
 
+    /**
+     * Helper method to handle validation errors
+     * @param dto The DTO object
+     * @param dtoName The name of the DTO attribute
+     * @param bindingResult Validation results
+     * @param redirectAttributes Redirect attributes
+     * @param redirectPath Path to redirect to
+     * @return Redirect path
+     */
+    private <T> String handleValidationErrors(T dto, String dtoName, BindingResult bindingResult, 
+                                           RedirectAttributes redirectAttributes, String redirectPath) {
+        redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult." + dtoName, bindingResult);
+        redirectAttributes.addFlashAttribute(dtoName, dto);
+        return redirectPath;
+    }
+
+    /**
+     * Helper method to handle duplicate title errors
+     * @param dto The DTO object
+     * @param dtoName The name of the DTO attribute
+     * @param bindingResult Validation results
+     * @param redirectAttributes Redirect attributes
+     * @param redirectPath Path to redirect to
+     * @return Redirect path
+     */
+    private <T> String handleDuplicateTitleError(T dto, String dtoName, BindingResult bindingResult,
+                                              RedirectAttributes redirectAttributes, String redirectPath) {
+        // Unique constraint violation on title is the only reason this would happen
+        bindingResult.rejectValue("title", "error.deck", "A deck with that title already exists");
+        return handleValidationErrors(dto, dtoName, bindingResult, redirectAttributes, redirectPath);
+    }
 }
