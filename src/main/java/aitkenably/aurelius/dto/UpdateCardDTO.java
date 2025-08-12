@@ -1,4 +1,4 @@
-package aitkenably.aurelius;
+package aitkenably.aurelius.dto;
 
 public class UpdateCardDTO {
     private String question;

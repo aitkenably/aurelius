@@ -1,16 +1,16 @@
 package aitkenably.aurelius.controllers;
 
-import aitkenably.aurelius.NewDeckDTO;
-import aitkenably.aurelius.UpdateCardDTO;
+import aitkenably.aurelius.dto.NewDeckDTO;
+import aitkenably.aurelius.dto.UpdateCardDTO;
 import aitkenably.aurelius.domain.Card;
 import aitkenably.aurelius.domain.CardRepository;
 import aitkenably.aurelius.domain.Deck;
 import aitkenably.aurelius.domain.DeckRepository;
+import aitkenably.aurelius.dto.UpdateDeckDTO;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 // TODO: Add card endpoints
 // TODO: Is there a better way to list endpoints in the documentation?
@@ -102,6 +100,7 @@ public class DeckController {
             try {
                 deckRepo.save(newDeckDto.toDeck());
             } catch (DataIntegrityViolationException ex) {
+                // Unique constraint violation on title is the only reason this would happen
                 bindingResult.rejectValue("title", "error.deck", "A deck with that title already exists");
                 redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.newDeckDto", bindingResult);
                 redirectAttributes.addFlashAttribute("newDeckDto", newDeckDto);
@@ -119,14 +118,43 @@ public class DeckController {
      * @return the view and the deck
      */
     @GetMapping("/{did}/edit")
-    public ModelAndView editDeckForm(@PathVariable("did") Long did) {
+    public String updateDeckForm(@PathVariable("did") Long did, Model model) {
         var deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        ModelAndView mav = new ModelAndView("decks/edit");
-        mav.addObject("deck", deck);
-        return mav;
+        model.addAttribute("updateDeckDto", new UpdateDeckDTO(deck));
+        return "decks/edit";
     }
 
+    /**
+     * Update a deck.
+     * @param deck Deck to update
+     * @return Redirect to the deck
+     */
+    @PutMapping("/{did}")
+    public String updateDeck(@PathVariable("did") Long did, @Valid @ModelAttribute UpdateDeckDTO updateDeckDto,
+                             BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        if(!updateDeckDto.getId().equals(did)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
 
+        if(bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("updateDeckDto", updateDeckDto);
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.updateDeckDto", bindingResult);;
+            return "redirect:decks/" + did + "/edit";
+        } else {
+            Deck deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            updateDeckDto.updateDeck(deck);
+            try {
+                deckRepo.save(deck);
+            } catch(DataIntegrityViolationException ex) {
+                bindingResult.rejectValue("title", "error.deck", "A deck with that title already exists");
+                redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.updateDeckDto", bindingResult);
+                redirectAttributes.addFlashAttribute("updateDeckDto", updateDeckDto);
+                return "redirect:decks/" + did + "/edit";
+            }
+        }
+
+        return "redirect:/decks/" + did;
+    }
 
     /**
      * Delete a deck.
@@ -140,18 +168,7 @@ public class DeckController {
         return "redirect:/decks";
     }
 
-    /**
-     * Update a deck.
-     * @param deck Deck to update
-     * @return Redirect to the deck
-     */
-    @PutMapping("/{did}")
-    public String updateDeck(Deck deck) {
-        // TODO: Validate the data & id match
-        // TODO: Pass UpdateDeckDTO (NewDeckDTO to use content)
-        deckRepo.save(deck);
-        return "redirect:/decks/" + deck.getId();
-    }
+
 
     // TODO: Comment
     @GetMapping("/{did}/cards/new")
