@@ -1,8 +1,12 @@
-package aitkenably.aurelius;
+package aitkenably.aurelius.dto;
 
 import aitkenably.aurelius.domain.Deck;
+import jakarta.validation.constraints.NotBlank;
+
 
 public class NewDeckDTO {
+
+    @NotBlank(message = "Title is required")
     private String title;
 
     public String getTitle() {
@@ -13,9 +17,9 @@ public class NewDeckDTO {
         this.title = title;
     }
 
-    public static Deck toDeck(NewDeckDTO dto) {
+    public Deck toDeck() {
         var d = new Deck();
-        d.setTitle(dto.title);
+        d.setTitle(title);
         return d;
     }
 

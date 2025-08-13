@@ -2,6 +2,8 @@ package aitkenably.aurelius.domain;
 
 import jakarta.persistence.*;
 
+import java.util.Set;
+
 // TODO: Add null and unique constraints on title (update DB)
 
 @Entity
@@ -12,6 +14,17 @@ public class Deck {
     @Column(nullable = false)
     private Long id;
     private String title;
+
+    @OneToMany(mappedBy = "deck")
+    private Set<Card> cards;
+
+    public Deck(Long id) {
+        this.id = id;
+    }
+
+    public Deck() {
+
+    }
 
     public Long getId() {
         return id;
@@ -27,5 +40,13 @@ public class Deck {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Set<Card> getCards() {
+        return cards;
+    }
+
+    public void setCards(Set<Card> cards) {
+        this.cards = cards;
     }
 }
