@@ -19,6 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
+
 // TODO: Add card endpoints
 // TODO: Is there a better way to list endpoints in the documentation?
 
@@ -201,8 +203,9 @@ public class DeckController {
         card.setId(null);
         Deck deck = deckRepo.findById(did).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         card.setDeck(deck);
-
+        card.setNextReview(LocalDate.now());
         cardRepo.save(card);
+
         return "redirect:/decks/" + did;
     }
 

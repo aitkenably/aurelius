@@ -1,0 +1,2 @@
+ALTER TABLE card
+ALTER COLUMN easiness SET DEFAULT 0;
